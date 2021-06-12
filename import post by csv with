@@ -1,0 +1,278 @@
+//Added By Hamza Daniyal On 16-04-2021
+add_shortcode( 'import_books', 'ps_khanqah_import_books' );
+function ps_khanqah_import_books(){
+	echo "FUNCTION FOR IMPORT, DO NOT IMPORT WITHOUT ASKING CARTZ Link";
+	die();
+	function import($path){
+		$re = "";
+		$row = 1;
+		if (($handle = fopen($path, "r")) !== FALSE) {
+				while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
+					$num = count($data);
+					$book_title = $data[0];
+					$book_author = $data[1];
+					$book_language = $data[2];
+					$book_category = $data[3];
+					$fileName = $data[4];
+					$book_title_english = $data[5];
+					$download_link = $data[6];
+					$hijri_date = $data[7];
+					$publish_date = $data[8];
+					$pages = $data[9];
+					$introduction = $data[10];
+					
+					$code = explode("-",$fileName)[0];
+					$image = str_replace(".pdf",".jpg",$download_link);
+					$intro = file_get_contents(str_replace(".pdf",".txt",$download_link));
+					$category = 0;
+					if($book_category == "دیگر اکابر"){
+						$book_category = "دیگر اکابرین";
+						$category = get_cat_ID($book_category);
+					}else{
+						$category = get_cat_ID($book_category);
+					}
+					if($row > 270 && $row <= 280){
+						$my_post = array();
+						$my_post['post_title'] = $book_title;
+						$my_post['post_type'] = 'book';
+						$my_post['post_content'] = '';
+						$my_post['post_status'] = 'publish';
+						$my_post['post_author'] = 1;
+						$my_post['post_category'] = array($category);
+						$post_id = wp_insert_post( $my_post );
+
+ 						$upload_id = wp_insert_attachment( array(
+							'guid'           => "http://khanqah.org/v8/wp-content/uploads/2021/04/".$fileName.".jpg", 
+							'post_mime_type' => 'image/jpeg',
+							'post_title'     => $book_title_english,
+							'post_content'   => '',
+							'post_status'    => 'inherit'
+						), "2021/04/".$fileName.".jpg" ,$post_id);
+						$attach_data = wp_generate_attachment_metadata( $upload_id, "http://khanqah.org/v8/wp-content/uploads/2021/04/".$fileName.".jpg" );
+    					wp_update_attachment_metadata( $upload_id, $attach_data );
+						
+						update_post_meta( $post_id, 'book_code', $code);
+						update_post_meta( $post_id, 'name', $book_title);
+						update_post_meta( $post_id, 'author', $book_author);
+						update_post_meta( $post_id, 'type', 'speech');
+						update_post_meta( $post_id, 'language', 'urdu');
+						update_post_meta( $post_id, 'download_link', $download_link);
+						update_post_meta( $post_id, 'book_cover', $upload_id);
+						update_post_meta( $post_id, 'introduction', $intro);
+						update_post_meta( $post_id, 'hijri_date', $hijri_date);
+						update_post_meta( $post_id, 'publish_date', $publish_date);
+						update_post_meta( $post_id, 'pages', $pages);
+						
+						//var_dump($attach_data);
+						
+					$re .= "<p> POST INSERTED $post_id ATTACHMENT $upload_id FILE NAME $fileName <br /></p>\n";
+					}
+					$row++;
+				}
+				fclose($handle);
+			}
+			echo $re . "| " .$num;
+	}
+	$pathcsv = $_SERVER['DOCUMENT_ROOT']."/v5/khanqah_data/09Mar2021/Books/Book Listing 11Mar2021-new.csv";
+	if (file_exists($pathcsv)){
+		if(!is_readable($pathcsv)) {
+			echo "NOT READABLE";
+		}else{
+			echo import($pathcsv);
+		}
+	}
+	else {
+		echo "FILE NOT EXISTS";
+	}
+				
+}
+
+add_shortcode( 'import_audio', 'ps_khanqah_import_audio' );	
+function ps_khanqah_import_audio(){
+ 	echo "FUNCTION FOR IMPORT, DO NOT IMPORT WITHOUT ASKING CARTZ Link";
+ 	die();
+	function import($path){
+		$re = "";
+		$row = 1;
+		if (($handle = fopen($path, "r")) !== FALSE) {
+				while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
+					
+					$num = count($data);
+					$book_title_UR = $data[0];
+					$book_title_ENG = $data[1];
+					$file_name = $data[2];
+					$code_new = $data[3];
+					$date = $data[4];
+					$details = $data[5];
+					$category_1_eng = $data[6];
+					$category_1_ur = $data[7];
+					$category_2_eng = $data[8];
+					$category_2_ur = $data[9];
+// 					$voice_eng = $data[8];
+// 					$voice_ur = $data[9];
+					$speaker_eng = $data[10];
+					$speaker_ur = $data[11];
+					$code = explode("-",$file_name)[0];
+					
+					if($category_2_ur == "دعا"){
+						//$re .= "FIRST <br>";
+						$category_2_ur = "دعائیں";
+						$cat_1_eng = get_cat_ID($category_1_eng);
+						$cat_1_ur = get_cat_ID($category_1_ur);
+						$cat_2_eng = get_cat_ID($category_2_eng);
+						$cat_2_ur = get_cat_ID($category_2_ur);
+						$category_speaker_urdu = get_cat_ID($speaker_ur);
+						$category_speaker_eng = get_cat_ID($speaker_eng);
+						
+					}else if($category_2_ur == "سوانح "){
+						//$re .= "SECOND <br>";
+						$category_2_ur = "سوانح";
+						$cat_1_eng = get_cat_ID($category_1_eng);
+						$cat_1_ur = get_cat_ID($category_1_ur);
+						$cat_2_eng = get_cat_ID($category_2_eng);
+						$cat_2_ur = get_cat_ID($category_2_ur);
+						$category_speaker_urdu = get_cat_ID($speaker_ur);
+						$category_speaker_eng = get_cat_ID($speaker_eng);
+					}else if($category_2_ur == "دیگر اکابر "){
+						//$re .= "SECOND <br>";
+						$category_2_ur = "دیگر اکابرین";
+						$cat_1_eng = get_cat_ID($category_1_eng);
+						$cat_1_ur = get_cat_ID($category_1_ur);
+						$cat_2_eng = get_cat_ID($category_2_eng);
+						$cat_2_ur = get_cat_ID($category_2_ur);
+						$category_speaker_urdu = get_cat_ID($speaker_ur);
+						$category_speaker_eng = get_cat_ID($speaker_eng);
+					}else{
+						//$re .= "THIRD <br>";
+						$cat_1_eng = get_cat_ID($category_1_eng);
+						$cat_1_ur = get_cat_ID($category_1_ur);
+						$cat_2_eng = get_cat_ID($category_2_eng);
+						$cat_2_ur = get_cat_ID($category_2_ur);
+						$category_speaker_urdu = get_cat_ID($speaker_ur);
+						$category_speaker_eng = get_cat_ID($speaker_eng);
+					}
+					
+ 					if($row > 900 && $row <= 1000){
+						$my_post = array();
+						$my_post['post_title'] = $book_title_UR;
+						$my_post['post_type'] = 'audio';
+						$my_post['post_content'] = '';
+						$my_post['post_status'] = 'publish';
+						$my_post['post_author'] = 1;
+						$my_post['post_category'] = array($cat_1_eng,$cat_1_ur,$cat_2_eng,$cat_2_ur,$category_speaker_urdu,$category_speaker_eng);
+						$download_link = "alhaq.pk/v5/khanqah_data/09Mar2021/Audio/$file_name";
+						
+// 						$post_id = wp_insert_post( $my_post );
+// 						$guid = "http://khanqah.org/v8/?post_type=audio&#038;p=$post_id";
+// 						global $wpdb;
+// 						$wpdb->update($wpdb->posts, ['guid' => $guid], ['ID' => $post_id]);
+// 						update_post_meta( $post_id, 'code', $code);
+// 						update_post_meta( $post_id, 'download_link', $download_link);
+// 						update_post_meta( $post_id, 'audio_type', 'speech');
+// 						update_post_meta( $post_id, 'language', 'urdu');
+						
+					$re .= "<p>$post_id POST $cat_1_ur INSERTED $cat_2_ur FILE NAME $file_name ROW $row <br /></p>\n";
+ 					}
+					$row++;
+				}
+				fclose($handle);
+			}
+			echo $re;
+	}
+	$pathcsv = $_SERVER['DOCUMENT_ROOT']."/v5/khanqah_data/09Mar2021/Audio/Hikmat k moti Akhtar sahab.csv";
+	if (file_exists($pathcsv)){
+		if(!is_readable($pathcsv)) {
+			echo "NOT READABLE";
+		}else{
+			echo import($pathcsv);
+		}
+	}
+	else {
+		echo "FILE NOT EXISTS";
+	}
+				
+}
+
+add_shortcode( 'import_audio_lectures', 'ps_khanqah_import_audio_lectures' );	
+function ps_khanqah_import_audio_lectures(){
+ 	echo "FUNCTION FOR IMPORT, DO NOT IMPORT WITHOUT ASKING CARTZ Link";
+ 	die();
+	function import($path){
+		$re = "";
+		$row = 1;
+		if (($handle = fopen($path, "r")) !== FALSE) {
+				while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
+					
+					$num = count($data);
+					$book_title_UR = $data[0];
+					$book_title_ENG = $data[1];
+					$file_name = $data[2];
+					$code_new = $data[3];
+					$date = $data[4];
+					$details = $data[5];
+					$category_1_eng = $data[6];
+					$category_1_ur = $data[7];
+					$category_2_eng = $data[8];
+					$category_2_ur = $data[9];
+					$speaker_eng = $data[10];
+					$speaker_ur = $data[11];
+					$code = explode("-",$file_name)[0];
+					
+					if($category_2_ur == "دیگر اکابر"){
+						$category_2_ur = "دیگر اکابرین";
+						$cat_1_eng = get_cat_ID($category_1_eng);
+						//$cat_1_ur = get_cat_ID($category_1_ur);
+						$cat_2_eng = get_cat_ID($category_2_eng);
+						//$cat_2_ur = get_cat_ID($category_2_ur);
+						$category_speaker_urdu = get_cat_ID($speaker_ur);
+						$category_speaker_eng = get_cat_ID($speaker_eng);
+					}else{
+						$cat_1_eng = get_cat_ID($category_1_eng);
+						//$cat_1_ur = get_cat_ID($category_1_ur);
+						$cat_2_eng = get_cat_ID($category_2_eng);
+						//$cat_2_ur = get_cat_ID($category_2_ur);
+						$category_speaker_urdu = get_cat_ID($speaker_ur);
+						$category_speaker_eng = get_cat_ID($speaker_eng);
+					}
+					
+					if($row > 1 && $row <= 100){
+						$my_post = array();
+						$my_post['post_title'] = $book_title_UR;
+						$my_post['post_type'] = 'audio';
+						$my_post['post_content'] = '';
+						$my_post['post_status'] = 'publish';
+						$my_post['post_author'] = 1;
+						$my_post['post_category'] = array($cat_1_eng,$category_1_ur,$cat_2_eng,$category_2_ur);
+						$download_link = "alhaq.pk/v5/khanqah_data/09Mar2021/Audio/$file_name";
+						
+// 						$post_id = wp_insert_post( $my_post );
+// 						$guid = "http://khanqah.org/v8/?post_type=audio&#038;p=$post_id";
+// 						global $wpdb;
+// 						$wpdb->update($wpdb->posts, ['guid' => $guid], ['ID' => $post_id]);
+// 						update_post_meta( $post_id, 'code', $code);
+// 						update_post_meta( $post_id, 'download_link', $download_link);
+// 						update_post_meta( $post_id, 'audio_type', 'speech');
+// 						update_post_meta( $post_id, 'language', 'urdu');
+// 						update_post_meta( $post_id, 'date', '$date');
+						
+					//$re .= "<p> POST INSERTED ATTACHMENT $guid FILE NAME $book_title_UR ROW $row <br /></p>\n";
+					}
+					$row++;
+				}
+				fclose($handle);
+			}
+			echo $re;
+	}
+	$pathcsv = $_SERVER['DOCUMENT_ROOT']."/v5/khanqah_data/09Mar2021/Audio/Lecture 15Apr2021.csv";
+	if (file_exists($pathcsv)){
+		if(!is_readable($pathcsv)) {
+			echo "NOT READABLE";
+		}else{
+			echo import($pathcsv);
+		}
+	}
+	else {
+		echo "FILE NOT EXISTS";
+	}
+				
+}
